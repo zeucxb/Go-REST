@@ -34,7 +34,7 @@ func init() {
 
 	dfLog := log.Ldate | log.Ltime | log.Lshortfile
 
-	Info = log.New(io.MultiWriter(fileInfo, os.Stderr),
+	Info = log.New(io.MultiWriter(fileInfo, os.Stdout),
 		"INFO: ",
 		dfLog)
 
