@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"server/helpers/log"
+	"server/helpers/logger"
 	"server/helpers/upload"
 	"server/models"
 	"strings"
@@ -107,29 +107,31 @@ func (uc UserController) UpdateAvatar(w http.ResponseWriter, r *http.Request, p 
 	// Fetch user
 	if err := uc.session.DB("rest_example").C("users").FindId(oid).One(&u); err != nil {
 		w.WriteHeader(404)
-		fmt.Println("ERR:", err)
-		fmt.Println(err)
+		logger.Error.Println(err)
 		return
 	}
 
 	// the FormFile function takes in the POST input id file
 	file, header, err := r.FormFile("avatar")
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(header)
-		fmt.Println(file)
+		logger.Error.Println(err)
+		logger.Info.Println(header)
 		return
 	}
 
 	if u.Avatar != "default.png" {
-		log.Err(upload.Remove(u.Avatar, "avatar"))
+		if err := upload.Remove(u.Avatar, "avatar"); err != nil {
+			logger.Error.Println(err)
+		}
 	}
 
 	avatarArr := strings.Split(header.Filename, ".")
 
 	avatarFile := fmt.Sprintf("%s.%s", id, avatarArr[len(avatarArr)-1])
 
-	log.Err(upload.Upload(file, avatarFile, "avatar"))
+	if err := upload.Upload(file, avatarFile, "avatar"); err != nil {
+		logger.Error.Println(err)
+	}
 
 	colQuerier := bson.M{"_id": oid}
 	update := bson.M{"$set": bson.M{"avatar": avatarFile}}
@@ -137,18 +139,17 @@ func (uc UserController) UpdateAvatar(w http.ResponseWriter, r *http.Request, p 
 	// Update avatar
 	if err := uc.session.DB("rest_example").C("users").Update(colQuerier, update); err != nil {
 		w.WriteHeader(404)
-		fmt.Println(err)
+		logger.Error.Println(err)
 		return
 	}
 
 	// Fetch user
 	if err := uc.session.DB("rest_example").C("users").FindId(oid).One(&u); err != nil {
 		w.WriteHeader(404)
-		fmt.Println(err)
+		logger.Error.Println(err)
 		return
 	}
 
-	// header.Filename
 	// Marshal provided interface into JSON structure
 	uj, _ := json.Marshal(u)
 
