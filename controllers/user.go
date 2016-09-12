@@ -3,9 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
+	"server/helpers/log"
+	"server/helpers/upload"
 	"server/models"
 	"strings"
 
@@ -107,6 +107,7 @@ func (uc UserController) UpdateAvatar(w http.ResponseWriter, r *http.Request, p 
 	// Fetch user
 	if err := uc.session.DB("rest_example").C("users").FindId(oid).One(&u); err != nil {
 		w.WriteHeader(404)
+		fmt.Println("ERR:", err)
 		fmt.Println(err)
 		return
 	}
@@ -119,28 +120,16 @@ func (uc UserController) UpdateAvatar(w http.ResponseWriter, r *http.Request, p 
 		fmt.Println(file)
 		return
 	}
-	defer file.Close()
 
-	if err := os.Remove(fmt.Sprintf("./avatar/%s", u.Avatar)); err != nil {
-		fmt.Println(err)
+	if u.Avatar != "default.png" {
+		log.Err(upload.Remove(u.Avatar, "avatar"))
 	}
 
 	avatarArr := strings.Split(header.Filename, ".")
 
 	avatarFile := fmt.Sprintf("%s.%s", id, avatarArr[len(avatarArr)-1])
 
-	out, err := os.Create("./avatar/" + avatarFile)
-	if err != nil {
-		fmt.Println("Unable to create the file for writing. Check your write access privilege")
-		return
-	}
-	defer out.Close()
-
-	// write the content from POST to the file
-	_, err = io.Copy(out, file)
-	if err != nil {
-		fmt.Println(err)
-	}
+	log.Err(upload.Upload(file, avatarFile, "avatar"))
 
 	colQuerier := bson.M{"_id": oid}
 	update := bson.M{"$set": bson.M{"avatar": avatarFile}}
