@@ -1,2 +1,3 @@
 ERROR: 2016/09/12 17:20:28 logger.go:29: not found
 ERROR: 2016/09/12 17:42:50 user.go:110: not found
+ERROR: 2016/09/12 18:09:54 user.go:117: request Content-Type isn't multipart/form-data
